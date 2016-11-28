@@ -284,6 +284,8 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     for i in range(0, len(simple_plots)) :
         plot_bundle = simple_plots[i]
         h = plot_bundle['p']
+        if 'rebin' in _draw_options :
+            h.Rebin(_draw_options['rebin'])
         h.Draw()
         plot_draw_options = plot_bundle['draw_options']
         if 'color' in plot_draw_options :
@@ -304,6 +306,8 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         plot_bundle = stacked_plots[i]
         h = plot_bundle['p']
         h.Draw()
+        if 'rebin' in _draw_options :
+            h.Rebin(_draw_options['rebin'])
         plot_draw_options = plot_bundle['draw_options']
         if 'color' in plot_draw_options :
             h.SetLineColor(plot_draw_options['color'])
