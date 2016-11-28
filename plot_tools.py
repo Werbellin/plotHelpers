@@ -208,7 +208,8 @@ def get_y_title(histo, draw_options) :
     #    y_title += ' ' + unit
 
         return y_title  
-ave_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
+
+def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
 
     if simple_plots is None : simple_plots = []
     if stacked_plots is None : stacked_plots = []
