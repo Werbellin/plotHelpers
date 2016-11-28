@@ -288,7 +288,7 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         plot_draw_options = plot_bundle['draw_options']
         if 'color' in plot_draw_options :
             h.SetLineColor(plot_draw_options['color'])
-            #h.SetFillColor(plot_draw_options['color'])
+            h.SetFillColor(plot_draw_options['color'])
             h.SetMarkerColor(plot_draw_options['color'])
         h.SetLineWidth(2)
         if 'MarkerStyle' in plot_draw_options :
@@ -321,8 +321,8 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         if 'no_legend' not in _draw_options :
             legend_title = plot_draw_options['legend_title']
             if not 'legend_supress_counts' in  _draw_options :
-                legend_title += '({:.2f}'.format(h.Integral()) + ' events)'
-            legend.AddEntry(h, legend_title, "LP")           
+                legend_title += ' ({:.2f}'.format(h.Integral()) + ' events)'
+            legend.AddEntry(h, legend_title, "FP")           
         theStackStack.Add(h)
 
     if theStack is not None :
