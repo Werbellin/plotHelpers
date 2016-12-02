@@ -16,7 +16,7 @@ def scale_hist(hist, scale) :
 
 def get_copy(filename, histname) :
 
-    afile = rt.TFile(filename)
+    afile = rt.TFile.Open(filename)
 
     #afile.ls()
     orgHist = afile.Get(histname)
@@ -32,8 +32,11 @@ def get_copy(filename, histname) :
 def get_plot(file_name, plot_name, options = None, reference_counts_name = None) :
     if options == None :
         options = {}
+    print 'file_name ', file_name
+    print 'plot_name', plot_name
+    #return None
     out_plot = get_copy(file_name, plot_name)
-
+    
     if 'Counters_hist' in options :
         counters = get_copy(file_name, 'Counters')
         sumOfWeights = counters.GetBinContent(40)
@@ -258,22 +261,6 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     else :
         theStackStack = rt.THStack('tmp2', 'tmp')
     if len(stacked_plots) == 0 : theStackStack = None
-
-    if 'x_title' not in _draw_options :
-        _draw_options['x_title'] = first_plot.GetXaxis().GetTitle()
-
-    if ('y_title' not in _draw_options) or (not 'no_y_bin' in _draw_options) :
-        _draw_options['y_title'] = get_y_title(first_plot, _draw_options) #yTitle = y_title, unit = _draw_options['y_unit'])
-
-    if 'per_bin_norm' in _draw_options :
-        plots = []
-        for i in range(0, len(simple_plots)) :
-            plots.append(simple_plots[i]['p'])
-        norm_per_bin(plots)
-
-    if 'cumulative' in _draw_options :
-        for i in range(0, len(simple_plots)) :
-            simple_plots[i]['p'] = simple_plots[i]['p'].GetCumulative(_draw_options['cumulative'])
         
     #print '_draw_options', _draw_options
     if 'draw_option' not in _draw_options :
@@ -298,7 +285,7 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         if 'no_legend' not in _draw_options :
             legend_title = plot_draw_options['legend_title']
             if not 'legend_supress_counts' in  _draw_options :
-                legend_title += '({:.2f}'.format(h.Integral()) + ' events)'
+                legend_title += ' ({:.0f}'.format(h.Integral()) + ' events)'
             legend.AddEntry(h, legend_title, "LP")
         theStack.Add(h)
         
@@ -328,7 +315,23 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
                 legend_title += ' ({:.2f}'.format(h.Integral()) + ' events)'
             legend.AddEntry(h, legend_title, "FP")           
         theStackStack.Add(h)
+        
+    if 'x_title' not in _draw_options :
+        _draw_options['x_title'] = first_plot.GetXaxis().GetTitle()
+        
+    if ('y_title' not in _draw_options) or (not 'no_y_bin' in _draw_options) :
+        _draw_options['y_title'] = get_y_title(first_plot, _draw_options) #yTitle = y_title, unit = _draw_options['y_unit'])
 
+    if 'per_bin_norm' in _draw_options :
+        plots = []
+        for i in range(0, len(simple_plots)) :
+            plots.append(simple_plots[i]['p'])
+        norm_per_bin(plots)
+
+    if 'cumulative' in _draw_options :
+        for i in range(0, len(simple_plots)) :
+            simple_plots[i]['p'] = simple_plots[i]['p'].GetCumulative(_draw_options['cumulative'])
+        
     if theStack is not None :
         theStack.Draw("NOSTACK")
         theStack.GetXaxis().SetTitle(_draw_options['x_title'])
