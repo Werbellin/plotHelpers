@@ -3,7 +3,15 @@ import ROOT as rt
 rt.TH1.AddDirectory(rt.kFALSE)
 import math
 
-rt.gStyle.SetOptTitle(0)
+from CMSGraphics import makeCMSCanvas, printLumiPrelOut
+#rt.gStyle.SetOptTitle(0)
+
+import tdrstyle
+
+def set_neg_bins_zero(histo ):
+    for i in range(histo.GetNbinsX()) :
+        if histo.GetBinContent(i) < 0. :
+            histo.SetBinContent(i,0.)
 
 def norm_hist(hist, norm = 1.) :
     integral = hist.Integral()
@@ -13,15 +21,25 @@ def norm_hist(hist, norm = 1.) :
 def scale_hist(hist, scale) :
     hist.Scale(scale)
     return hist
+def try_except(fn):
+    """decorator for extra debugging output"""
+    def wrapped(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except:
+            import traceback
+            traceback.print_exc()
+            assert(0)
+    return wrapped
 
+@try_except
 def get_copy(filename, histname) :
-
+    #print 'Called get_copy to get ', histname, ' from ', filename
     afile = rt.TFile.Open(filename)
-
-    #afile.ls()
     orgHist = afile.Get(histname)
     if orgHist == None :
-        print 'Did not find histogram ', histname
+        print 'Did not find histogram '
+        print histname
         afile.ls()
     else :
         tmp = orgHist.Clone(orgHist.GetName() + '_copy' + str(random()) )
@@ -32,8 +50,8 @@ def get_copy(filename, histname) :
 def get_plot(file_name, plot_name, options = None, reference_counts_name = None) :
     if options == None :
         options = {}
-    print 'file_name ', file_name
-    print 'plot_name', plot_name
+    #print 'file_name ', file_name
+    #print 'plot_name', plot_name
     #return None
     out_plot = get_copy(file_name, plot_name)
     
@@ -97,69 +115,9 @@ def sum_plots(plot_list = [], file_name = '', options = None) :
     if 'normalize' in options : norm_hist(out_plot)
     return out_plot
 
-def to_precision(x,p):
-    """
-    returns a string representation of x formatted with a precision of p
-
-    Based on the webkit javascript implementation taken from here:
-    https://code.google.com/p/webkit-mirror/source/browse/JavaScriptCore/kjs/number_object.cpp
-    """
-    x = float(x)
-
-    if x == 0.:
-        return "0." + "0"*(p-1)
-
-    out = []
-
-    if x < 0:
-        out.append("-")
-        x = -x
-
-    e = int(math.log10(x))
-    tens = math.pow(10, e - p + 1)
-    n = math.floor(x/tens)
-
-    if n < math.pow(10, p - 1):
-        e = e -1
-        tens = math.pow(10, e - p+1)
-        n = math.floor(x / tens)
-
-    if abs((n + 1.) * tens - x) <= abs(n * tens -x):
-        n = n + 1
-
-    if n >= math.pow(10,p):
-        n = n / 10.
-        e = e + 1
-
-
-    m = "%.*g" % (p, n)
-
-    if e < -2 or e >= p:
-        out.append(m[0])
-        if p > 1:
-            out.append(".")
-            out.extend(m[1:p])
-        out.append('e')
-        if e > 0:
-            out.append("+")
-        out.append(str(e))
-    elif e == (p -1):
-        out.append(m)
-    elif e >= 0:
-        out.append(m[:e+1])
-        if e+1 < len(m):
-            out.append(".")
-            out.extend(m[e+1:])
-    else:
-        out.append("0.")
-        out.extend(["0"]*-(e+1))
-        out.append(m)
-
-    return "".join(out)
 
 def get_y_title(histo, draw_options) :
     xAxis = histo.GetXaxis()
-    
     unit_dict = {'': ['phi', '\phi', 'eta', '\eta', 'BDT'], 'GeV' : ['pT', 'pT', 'p_T', 'p_{T}', 'p_{t}', 'mass', 'm', 'm_{ZZ}', 'm_{4l}']  }
 
     if 'y_unit' not in draw_options :
@@ -203,7 +161,9 @@ def get_y_title(histo, draw_options) :
     if y_title is None :
         y_title = histo.GetYaxis().GetTitle()
 
-    bin_width_string = to_precision(bin_width, 2)
+    bin_width_string = ('%f' % bin_width).rstrip('0').rstrip('.')
+    if unit is not None :
+        bin_width_string += ' ' + unit
 
     if bin_width_string != '0' and  'no_y_bin' not in draw_options :
         y_title = y_title + ' / ' + bin_width_string
@@ -220,10 +180,12 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     #  stacked_plots = []
     #else : do_stacked_plots = True
 
+    tdrstyle.setTDRStyle()
     _draw_options = draw_options.copy()
 
     if 'canvas' not in draw_options :
-        canvas = rt.TCanvas( str(random()), 'Test', 200, 10, 700, 700 )
+        canvas = makeCMSCanvas(str(random()),str(random()),800, 800)
+        #canvas = rt.TCanvas( str(random()), 'Test', 200, 10, 700, 700 )
     else :
         canvas = draw_options['canvas']
     
@@ -232,7 +194,7 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     #canvas.SetGridy()
 
     #print _draw_options
-    canvas.SetLeftMargin(0.15)
+#    canvas.SetLeftMargin(0.15)
     #canvas. SetLeftMargin(.5)
     histList = []
     if 'y_log' in _draw_options : canvas.SetLogy()
@@ -264,7 +226,7 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         
     #print '_draw_options', _draw_options
     if 'draw_option' not in _draw_options :
-        _draw_options['draw_option'] = 'NOSTACK'
+        _draw_options['draw_option'] = 'NOSTACKE1'
     if 'stack_draw_option' not in _draw_options :
         _draw_options['stack_draw_option'] = 'HIST'
 
@@ -274,14 +236,26 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         if 'rebin' in _draw_options :
             h.Rebin(_draw_options['rebin'])
         h.Draw()
+        h.SetBinErrorOption(rt.TH1.kPoisson2)
+        h.SetFillColorAlpha(rt.kBlue, 0)
         plot_draw_options = plot_bundle['draw_options']
         if 'color' in plot_draw_options :
             h.SetLineColor(plot_draw_options['color'])
             h.SetFillColor(plot_draw_options['color'])
             h.SetMarkerColor(plot_draw_options['color'])
+        if 'fill_color' in plot_draw_options :
+            h.SetFillColor(plot_draw_options['fill_color'])
+        if 'line_color' in plot_draw_options :
+            h.SetLineColor(plot_draw_options['line_color'])
+        #else :
+        #    h.SetLineColorAlpha(rt.kBlue, 0)
+            
         h.SetLineWidth(2)
         if 'MarkerStyle' in plot_draw_options :
             h.SetMarkerStyle(plot_draw_options['MarkerStyle'])
+        if 'MarkerSize' in plot_draw_options :
+            h.SetMarkerSize(plot_draw_options['MarkerSize'])
+        h.Draw('BAR')
         if 'no_legend' not in _draw_options :
             legend_title = plot_draw_options['legend_title']
             if not 'legend_supress_counts' in  _draw_options :
@@ -308,18 +282,26 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         h.SetLineWidth(2)
         if 'MarkerStyle' in plot_draw_options :
             h.SetMarkerStyle(plot_draw_options['MarkerStyle'])
-
+        else :
+            h.SetMarkerStyle(20)
+            h.SetMarkerSize(0)
+        theStackStack.Add(h)
+            
+    for i in range(len(stacked_plots) - 1, -1, -1) :  
+        plot_bundle = stacked_plots[i]
+        h = plot_bundle['p']
+        plot_draw_options = plot_bundle['draw_options']
         if 'no_legend' not in _draw_options :
             legend_title = plot_draw_options['legend_title']
             if not 'legend_supress_counts' in  _draw_options :
                 legend_title += ' ({:.2f}'.format(h.Integral()) + ' events)'
             legend.AddEntry(h, legend_title, "FP")           
-        theStackStack.Add(h)
+        
         
     if 'x_title' not in _draw_options :
         _draw_options['x_title'] = first_plot.GetXaxis().GetTitle()
         
-    if ('y_title' not in _draw_options) or (not 'no_y_bin' in _draw_options) :
+    if ('y_unit' not in _draw_options) or (not 'no_y_bin' in _draw_options) :
         _draw_options['y_title'] = get_y_title(first_plot, _draw_options) #yTitle = y_title, unit = _draw_options['y_unit'])
 
     if 'per_bin_norm' in _draw_options :
@@ -336,14 +318,14 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         theStack.Draw("NOSTACK")
         theStack.GetXaxis().SetTitle(_draw_options['x_title'])
         theStack.GetYaxis().SetTitle(_draw_options['y_title'])
-        theStack.GetYaxis().SetTitleOffset(1.7)
+        #theStack.GetYaxis().SetTitleOffset(1.7)
 
     if theStackStack is not None :
         theStackStack.Draw("STACK")
         if len(stacked_plots) > 0 :
             theStackStack.GetXaxis().SetTitle(_draw_options['x_title'])
             theStackStack.GetYaxis().SetTitle(_draw_options['y_title'])
-            theStackStack.GetYaxis().SetTitleOffset(1.7)  
+            #theStackStack.GetYaxis().SetTitleOffset(1.7)  
         
     if 'y_min' in _draw_options :
         if theStack is not None : theStack.SetMinimum(_draw_options['y_min'])
@@ -388,14 +370,21 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     if 'paves' in _draw_options :
         for pave in _draw_options['paves'] :
             #print 'Preparing pave', pave['text']
-            aPave = rt.TPaveText(pave['pos'][0],pave['pos'][1], pave['pos'][2], pave['pos'][3], "blNDC")
-            aPave.SetFillStyle(0)
-            aPave.SetBorderSize(0)
-            aPave.Draw()
-            aPave.AddText(pave['text'])
-            aPave.Draw()
+            aPave = rt.TLatex()
+            aPave.SetNDC()
+            aPave.SetTextFont(42)
+            aPave.SetTextSize(0.6*canvas.GetTopMargin())
+            #aPave = rt.TPaveText(pave['pos'][0],pave['pos'][1], pave['pos'][2], pave['pos'][3], "blNDC")
+            #aPave.SetFillStyle(0)
+            #aPave.SetBorderSize(0)
+            
+            #aPave.Draw()
+            #aPave.AddText(pave['text'])
+            aPave.DrawLatex(pave['pos'][0],pave['pos'][1],pave['text'])
     canvas.Update()
 
+
+    printLumiPrelOut(canvas)
     save_name = 'blubb'
     if 'save_name' in _draw_options :
         save_name = _draw_options['_draw_options']
