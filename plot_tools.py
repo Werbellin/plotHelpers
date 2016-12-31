@@ -1,5 +1,6 @@
 from random import random
 import ROOT as rt
+import os
 rt.TH1.AddDirectory(rt.kFALSE)
 import math
 
@@ -260,7 +261,8 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
             legend_title = plot_draw_options['legend_title']
             if not 'legend_supress_counts' in  _draw_options :
                 legend_title += ' ({:.0f}'.format(h.Integral()) + ' events)'
-            legend.AddEntry(h, legend_title, "LP")
+            if legend_title != '' :  
+                legend.AddEntry(h, legend_title, "LP")
         theStack.Add(h)
         
     for i in range(0, len(stacked_plots)) :
@@ -293,7 +295,14 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
         plot_draw_options = plot_bundle['draw_options']
         if 'no_legend' not in _draw_options :
             legend_title = plot_draw_options['legend_title']
-            if not 'legend_supress_counts' in  _draw_options :
+            
+            import array
+            error = array.array('d', [0])
+            integral = h.IntegralAndError(0, -1, error)
+            error = error[0]
+            if 'legend_counts_and_error' in  _draw_options :
+                legend_title += ' ({:.2f} +- {:.2f}'.format(integral, error) + ' events)'
+            elif not 'legend_supress_counts' in  _draw_options :
                 legend_title += ' ({:.2f}'.format(h.Integral()) + ' events)'
             legend.AddEntry(h, legend_title, "FP")           
         
@@ -301,7 +310,7 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     if 'x_title' not in _draw_options :
         _draw_options['x_title'] = first_plot.GetXaxis().GetTitle()
         
-    if ('y_unit' not in _draw_options) or (not 'no_y_bin' in _draw_options) :
+    if ('y_unit' not in _draw_options) :#or (not ('no_y_bin' in _draw_options)) :
         _draw_options['y_title'] = get_y_title(first_plot, _draw_options) #yTitle = y_title, unit = _draw_options['y_unit'])
 
     if 'per_bin_norm' in _draw_options :
@@ -387,15 +396,16 @@ def save_plot(simple_plots = None, stacked_plots = None, draw_options = {}) :
     printLumiPrelOut(canvas)
     save_name = 'blubb'
     if 'save_name' in _draw_options :
-        save_name = _draw_options['_draw_options']
+        save_name = _draw_options['save_name']
         save_folder = save_name[:save_name.rfind('/')]
         save_file_name = save_name[save_name.rfind('/'):]
 
-        subfolderName = outputFolderName + '//' + 'new_save/' + save_folder
+        subfolderName = save_folder
 
         if not os.path.exists(subfolderName):
             os.makedirs(subfolderName)
 
+        savedFileFormats = ['.pdf']
         for fileFormat in savedFileFormats :
             canvas.Print(subfolderName + '//' + save_file_name + fileFormat)
 

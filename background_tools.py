@@ -5,12 +5,15 @@ def make_ZpX_OS(selection, hist_name, proc_options) :
     proc_postfix = proc_options['proc_postfix']
     directory = proc_options ['directory']
     mc = proc_options['BKG_ZZ_correction']
+    
+    if 'folder' in proc_options : folder = proc_options['folder']
+    else : folder = selection
 
     #print '%s/%s_2P2F_%s'%(selection, selection, hist_name)
-    p_2P2F_SR = get_plot('%s%s_BKG_AllData_%s.root'%(directory, tree, proc_postfix), '%s/%s_2P2Fw_%s'%(selection, selection, hist_name))
+    p_2P2F_SR = get_plot('%s%s_BKG_AllData_%s.root'%(directory, tree, proc_postfix), '%s/%s_2P2Fw_%s'%(folder, selection, hist_name))
     #return {}
-    p_3P1F_SR = get_plot('%s%s_BKG_AllData_%s.root'%(directory, tree, proc_postfix), '%s/%s_3P1Fw_%s'%(selection, selection, hist_name))
-    p_ZZ_3P1F_SR = get_plot('%s%s_BKG_%s_%s.root'%(directory, tree, mc, proc_postfix), '%s/%s_3P1Fw_%s'%(selection, selection, hist_name))
+    p_3P1F_SR = get_plot('%s%s_BKG_AllData_%s.root'%(directory, tree, proc_postfix), '%s/%s_3P1Fw_%s'%(folder, selection, hist_name))
+    p_ZZ_3P1F_SR = get_plot('%s%s_BKG_%s_%s.root'%(directory, tree, mc, proc_postfix), '%s/%s_3P1Fw_%s'%(folder, selection, hist_name))
     
     p_3P1F_final = p_3P1F_SR.Clone()
     #print '3P1F before ZZ removal: ', p_3P1F_final.Integral()
